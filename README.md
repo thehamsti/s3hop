@@ -1,4 +1,4 @@
-# S3 Bucket Copy Script
+# Cross-account S3 Bucket Copying
 
 This script efficiently copies all files from one S3 bucket to another across different AWS accounts using streaming to minimize memory usage.
 
