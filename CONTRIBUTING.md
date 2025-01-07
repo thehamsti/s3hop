@@ -5,18 +5,21 @@ Thank you for your interest in contributing to s3hop! This document provides gui
 ## Development Setup
 
 1. Clone the repository:
+
 ```bash
-git clone https://github.com/hamsti/s3hop.git
+git clone https://github.com/thehamsti/s3hop.git
 cd s3hop
 ```
 
 2. Create and activate a virtual environment:
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 3. Install development dependencies:
+
 ```bash
 pip install -e ".[dev]"
 pip install build twine
@@ -25,6 +28,7 @@ pip install build twine
 ## Development Workflow
 
 1. Create a new branch for your feature/fix:
+
 ```bash
 git checkout -b feature/your-feature-name
 ```
@@ -46,11 +50,13 @@ git checkout -b feature/your-feature-name
 ## Testing
 
 1. Run tests:
+
 ```bash
 python -m pytest tests/
 ```
 
 2. Check code coverage:
+
 ```bash
 python -m pytest --cov=s3hop tests/
 ```
@@ -58,9 +64,11 @@ python -m pytest --cov=s3hop tests/
 ## Publishing to PyPI (for maintainers)
 
 ### Prerequisites
+
 1. You need maintainer access to the PyPI project
 2. Create a PyPI account if you don't have one
 3. Install required tools:
+
 ```bash
 pip install build twine
 ```
@@ -68,31 +76,37 @@ pip install build twine
 ### Publishing Process
 
 1. Update version number in:
+
    - `s3hop/__init__.py`
    - `setup.py`
 
 2. Create a new git tag:
+
 ```bash
 git tag v0.1.0  # Replace with your version
 git push origin v0.1.0
 ```
 
 3. Build the distribution packages:
+
 ```bash
 python -m build
 ```
 
 4. Test the build on TestPyPI first:
+
 ```bash
 python -m twine upload --repository testpypi dist/*
 ```
 
 5. Test the installation from TestPyPI:
+
 ```bash
 pip install --index-url https://test.pypi.org/simple/ s3hop
 ```
 
 6. If everything works, upload to PyPI:
+
 ```bash
 python -m twine upload dist/*
 ```
@@ -100,6 +114,7 @@ python -m twine upload dist/*
 ### Version Numbering
 
 We follow semantic versioning (MAJOR.MINOR.PATCH):
+
 - MAJOR: Incompatible API changes
 - MINOR: Add functionality in a backward-compatible manner
 - PATCH: Backward-compatible bug fixes
@@ -121,6 +136,7 @@ Before releasing a new version:
 ## Getting Help
 
 If you need help or have questions:
+
 1. Check existing issues on GitHub
 2. Create a new issue with a clear description
 3. Tag it appropriately (bug, enhancement, question, etc.)
@@ -134,4 +150,4 @@ If you need help or have questions:
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License. 
+By contributing, you agree that your contributions will be licensed under the MIT License.

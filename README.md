@@ -37,7 +37,7 @@ pip install s3hop
 Or install from source:
 
 ```bash
-git clone https://github.com/hamsti/s3hop.git
+git clone https://github.com/thehamsti/s3hop.git
 cd s3hop
 pip install .
 ```
@@ -90,11 +90,13 @@ s3hop prod s3://prod-bucket/data/ staging s3://staging-bucket/backup/
 ## Features in Detail
 
 1. **Smart File Comparison**
+
    - Compares files using ETags and last modified timestamps
    - Only copies new or updated files
    - Preserves existing files that haven't changed
 
 2. **Progress Tracking**
+
    - Real-time transfer speed
    - Estimated time remaining
    - Progress bar with file counts

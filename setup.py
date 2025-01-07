@@ -7,11 +7,11 @@ setup(
     name="s3hop",
     version="0.1.1",
     author="John Cummings",
-    author_email="john@hamsti.com",
+    author_email="john@hamsti.co",
     description="A tool to copy files between S3 buckets across AWS accounts",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/hamsti/s3hop",
+    url="https://github.com/thehamsti/s3hop",
     packages=find_packages(),
     license="MIT",
     classifiers=[
