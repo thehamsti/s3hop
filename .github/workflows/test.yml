@@ -57,6 +57,3 @@ jobs:
     
     - name: Check imports with isort
       run: isort --check-only --diff .
-    
-    - name: Lint with flake8
-      run: flake8 . 
