@@ -131,6 +131,5 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-- Thanks to all contributors who have helped shape this project
 - Built with [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
 - Progress bars powered by [tqdm](https://github.com/tqdm/tqdm)
