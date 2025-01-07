@@ -117,13 +117,12 @@ See [CHANGELOG.md](CHANGELOG.md) for a list of changes and version history.
 
 ## Security
 
-For security issues, please email security@hamsti.com instead of using the issue tracker.
+For security issues, please email security@hamsti.co instead of using the issue tracker.
 
 ## Support
 
-- 📫 Email: john@hamsti.com
-- 🐛 Issues: [GitHub Issues](https://github.com/hamsti/s3hop/issues)
-- 📖 Documentation: [GitHub Wiki](https://github.com/hamsti/s3hop/wiki)
+- 📫 Email: john@hamsti.co
+- 🐛 Issues: [GitHub Issues](https://github.com/thehamsti/s3hop/issues)
 
 ## License
 
