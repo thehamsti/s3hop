@@ -327,17 +327,4 @@ def copy_bucket(source_profile, source_url, dest_profile, dest_url):
     except KeyboardInterrupt:
         print("\nTransfer interrupted by user")
         print_summary(tracker)
-        sys.exit(1)
-
-if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        print("Usage: python copy_between_buckets.py <source_profile> <source_s3_url> <dest_profile> <dest_s3_url>")
-        print("Example: python copy_between_buckets.py source-profile s3://source-bucket/prefix/ dest-profile s3://dest-bucket/prefix/")
-        sys.exit(1)
-        
-    source_profile = sys.argv[1]
-    source_url = sys.argv[2]
-    dest_profile = sys.argv[3]
-    dest_url = sys.argv[4]
-    
-    copy_bucket(source_profile, source_url, dest_profile, dest_url)
+        sys.exit(1) 

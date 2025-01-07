@@ -1,16 +1,56 @@
-# Cross-account S3 Bucket Copying
+# s3hop - Cross-account S3 bucket streaming copy
 
-This script efficiently copies all files from one S3 bucket to another across different AWS accounts using streaming to minimize memory usage.
+[![PyPI version](https://badge.fury.io/py/s3hop.svg)](https://badge.fury.io/py/s3hop)
+[![Python Versions](https://img.shields.io/pypi/pyversions/s3hop.svg)](https://pypi.org/project/s3hop/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://pepy.tech/badge/s3hop)](https://pepy.tech/project/s3hop)
+
+A command-line tool to efficiently copy files between S3 buckets across different AWS accounts.
+
+## Features
+
+- Copy files between S3 buckets across different AWS accounts
+- Smart file comparison to only copy new or updated files
+- Progress tracking with ETA and transfer speed
+- Detailed transfer summary with file type statistics
+- Handles large files and directories efficiently using streaming
+- Preserves file structure between source and destination
+
+## Quick Start
+
+```bash
+# Install
+pip install s3hop
+
+# Use
+s3hop source-profile s3://source-bucket/prefix/ dest-profile s3://dest-bucket/prefix/
+```
+
+## Installation
+
+You can install this package directly from PyPI:
+
+```bash
+pip install s3hop
+```
+
+Or install from source:
+
+```bash
+git clone https://github.com/hamsti/s3hop.git
+cd s3hop
+pip install .
+```
 
 ## Prerequisites
 
-1. Python 3.6 or higher
+1. Python 3.6 or later
 2. AWS credentials configured for both source and destination accounts
-3. Required Python packages (install using `pip install -r requirements.txt`)
+3. Appropriate S3 permissions in both accounts
 
-## AWS Credentials Setup
+### AWS Credentials Setup
 
-1. Configure AWS credentials for both accounts in `~/.aws/credentials`:
+1. Configure your AWS credentials for both accounts in `~/.aws/credentials`:
 
 ```ini
 [source-profile]
@@ -22,40 +62,75 @@ aws_access_key_id = YOUR_DEST_ACCESS_KEY
 aws_secret_access_key = YOUR_DEST_SECRET_KEY
 ```
 
+2. Ensure you have the necessary S3 permissions:
+   - Source bucket: `s3:ListBucket`, `s3:GetObject`
+   - Destination bucket: `s3:ListBucket`, `s3:PutObject`
+
 ## Usage
 
+Basic usage:
+
 ```bash
-python copy_between_buckets.py <source_profile> <source_s3_url> <dest_profile> <dest_s3_url>
+s3hop source-profile s3://source-bucket/prefix/ dest-profile s3://dest-bucket/prefix/
 ```
 
-### Arguments:
-- `source_profile`: AWS profile name for the source account
-- `source_s3_url`: Source S3 URL in the format `s3://bucket-name/prefix/`
-- `dest_profile`: AWS profile name for the destination account
-- `dest_s3_url`: Destination S3 URL in the format `s3://bucket-name/prefix/`
+Example with specific profiles and paths:
 
-### Examples:
-
-Copy entire bucket:
 ```bash
-python copy_between_buckets.py source-profile s3://my-source-bucket/ dest-profile s3://my-dest-bucket/
+s3hop prod s3://prod-bucket/data/ staging s3://staging-bucket/backup/
 ```
 
-Copy from specific prefix:
-```bash
-python copy_between_buckets.py source-profile s3://my-source-bucket/data/2023/ dest-profile s3://my-dest-bucket/archive/
-```
+### Arguments
 
-Copy to specific prefix:
-```bash
-python copy_between_buckets.py source-profile s3://saxion-uas2-de.k16.io/archive-zips/ dest-profile s3://my-dest-bucket/archive-zips/
-```
+- `source-profile`: AWS profile for the source account
+- `source_url`: Source S3 URL (s3://bucket-name/prefix/)
+- `dest-profile`: AWS profile for the destination account
+- `dest_url`: Destination S3 URL (s3://bucket-name/prefix/)
 
-## Features
+## Features in Detail
 
-- Supports S3 URLs with bucket names and prefixes
-- Streams data directly between buckets to minimize memory usage
-- Supports copying between different AWS accounts
-- Shows progress and statistics during copying
-- Handles errors gracefully
-- Maintains directory structure when copying with prefixes
+1. **Smart File Comparison**
+   - Compares files using ETags and last modified timestamps
+   - Only copies new or updated files
+   - Preserves existing files that haven't changed
+
+2. **Progress Tracking**
+   - Real-time transfer speed
+   - Estimated time remaining
+   - Progress bar with file counts
+   - Total data transferred/remaining
+
+3. **Transfer Summary**
+   - Start and end times
+   - Duration
+   - Number of files transferred/skipped
+   - File type statistics
+   - Failed transfers (if any)
+
+## Development
+
+For development setup and contributing guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes and version history.
+
+## Security
+
+For security issues, please email security@hamsti.com instead of using the issue tracker.
+
+## Support
+
+- 📫 Email: john@hamsti.com
+- 🐛 Issues: [GitHub Issues](https://github.com/hamsti/s3hop/issues)
+- 📖 Documentation: [GitHub Wiki](https://github.com/hamsti/s3hop/wiki)
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Acknowledgments
+
+- Thanks to all contributors who have helped shape this project
+- Built with [boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+- Progress bars powered by [tqdm](https://github.com/tqdm/tqdm)
