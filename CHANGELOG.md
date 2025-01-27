@@ -17,3 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Streaming transfer to handle large files efficiently
 - Support for bucket prefixes
 - Error handling and graceful interruption 
+
+## [0.1.3] - 2025-01-27
+
+### Added
+- Added progress callback to upload_with_progress for large file uploads by chunking
+- Added unit tests for upload_with_progress

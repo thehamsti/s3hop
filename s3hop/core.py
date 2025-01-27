@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-__version__ = "0.1.3-dev"  # Development version
+__version__ = "0.1.3"  # Development version
 
 import os.path
 import queue
