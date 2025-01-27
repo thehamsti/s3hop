@@ -1,11 +1,11 @@
 from datetime import datetime
-from unittest.mock import Mock, patch
 from io import BytesIO
+from unittest.mock import Mock, patch
 
 import boto3
 import pytest
-from botocore.exceptions import ClientError
 from boto3.s3.transfer import TransferConfig
+from botocore.exceptions import ClientError
 
 from s3hop.core import (
     ProgressTracker,
