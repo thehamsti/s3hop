@@ -1,11 +1,13 @@
 from setuptools import find_packages, setup
 
+from s3hop import __version__
+
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name="s3hop",
-    version="0.1.3",
+    version=__version__,
     author="John Cummings",
     author_email="john@hamsti.co",
     description="A tool to copy files between S3 buckets across AWS accounts",

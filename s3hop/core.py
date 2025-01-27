@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-__version__ = "0.1.3"  # Development version
 
 import os.path
 import queue
@@ -14,6 +13,8 @@ import boto3
 import humanize
 from botocore.exceptions import ClientError
 from tqdm import tqdm
+
+from . import __version__
 
 
 class TransferStatus:

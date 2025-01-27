@@ -3,7 +3,7 @@
 import argparse
 import sys
 
-from . import core
+from . import __version__, core
 
 
 def main():
@@ -17,6 +17,9 @@ Examples:
         """,
     )
 
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
     parser.add_argument("source_profile", help="AWS profile for source account")
     parser.add_argument("source_url", help="Source S3 URL (s3://bucket-name/prefix/)")
     parser.add_argument("dest_profile", help="AWS profile for destination account")
