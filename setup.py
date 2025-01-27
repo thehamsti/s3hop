@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="s3hop",
-    version="0.1.2",
+    version="0.1.3-dev",
     author="John Cummings",
     author_email="john@hamsti.co",
     description="A tool to copy files between S3 buckets across AWS accounts",

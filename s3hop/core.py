@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+__version__ = "0.1.3-dev"  # Development version
 
 import os.path
 import queue
@@ -13,7 +14,6 @@ import boto3
 import humanize
 from botocore.exceptions import ClientError
 from tqdm import tqdm
-
 
 class TransferStatus:
     NEW = "new"
@@ -244,6 +244,30 @@ def print_summary(tracker):
         )
 
 
+def upload_with_progress(client, source_response, dest_bucket, dest_key, size, progress_callback):
+    """Upload a file to S3 with progress tracking"""
+    config = boto3.s3.transfer.TransferConfig(
+        multipart_threshold=1024 * 1024 * 8,  # 8MB
+        max_concurrency=10,
+        multipart_chunksize=1024 * 1024 * 8,  # 8MB
+        use_threads=True
+    )
+
+    try: 
+        client.upload_fileobj(
+            source_response["Body"],
+            dest_bucket,
+            dest_key,
+            Config=config,
+            Callback=progress_callback
+        )
+    except ClientError as e:
+        # Re-raise with context
+        raise ClientError(e.response, e.operation_name) from e
+    except Exception as e:
+        raise e
+
+
 def copy_bucket(source_profile, source_url, dest_profile, dest_url):
     """
     Copy all objects from source bucket to destination bucket using streaming.
@@ -254,6 +278,10 @@ def copy_bucket(source_profile, source_url, dest_profile, dest_url):
         dest_profile (str): AWS profile for destination account
         dest_url (str): Destination S3 URL (s3://bucket-name/prefix/)
     """
+    # If version contains -dev, print the version
+    if "-" in __version__:
+        print(f"s3hop version: {__version__}")
+
     # Parse source and destination URLs
     source_bucket, source_prefix = parse_s3_url(source_url)
     dest_bucket, dest_prefix = parse_s3_url(dest_url)
@@ -344,12 +372,15 @@ def copy_bucket(source_profile, source_url, dest_profile, dest_url):
                 def upload_progress_callback(bytes_transferred):
                     progress_bar.update(bytes_transferred)
 
-                dest_client.upload_fileobj(
-                    source_response["Body"],
+                upload_with_progress(
+                    dest_client,
+                    source_response,
                     dest_bucket,
                     dest_key,
-                    Callback=upload_progress_callback,
+                    size,
+                    upload_progress_callback
                 )
+
                 # Update progress
                 tracker.update(size)
                 tracker.update_extension_stats(source_key, size)
