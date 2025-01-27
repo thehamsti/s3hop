@@ -14,7 +14,7 @@ from s3hop.core import (
     get_object_info,
     get_relative_path,
     parse_s3_url,
-    upload_with_progress
+    upload_with_progress,
 )
 
 
@@ -272,77 +272,84 @@ def test_get_object_info_empty_bucket(mock_session):
 
 
 # Upload Progress Tests
-@patch('boto3.s3.transfer.TransferConfig')
+@patch("boto3.s3.transfer.TransferConfig")
 def test_upload_with_progress_success(mock_transfer_config):
     """Test successful upload with progress callback"""
     mock_client = Mock()
     mock_callback = Mock()
-    
-    source_response = {'Body': BytesIO(b'test data')}
-    dest_bucket = 'test-bucket'
-    dest_key = 'test/key.txt'
+
+    source_response = {"Body": BytesIO(b"test data")}
+    dest_bucket = "test-bucket"
+    dest_key = "test/key.txt"
     size = 1024
-    
+
     # Call the function
-    upload_with_progress(mock_client, source_response, dest_bucket, dest_key, size, mock_callback)
-    
+    upload_with_progress(
+        mock_client, source_response, dest_bucket, dest_key, size, mock_callback
+    )
+
     # Verify upload_fileobj was called correctly
     mock_client.upload_fileobj.assert_called_once_with(
-        source_response['Body'],
+        source_response["Body"],
         dest_bucket,
         dest_key,
         Config=mock_transfer_config.return_value,
-        Callback=mock_callback
+        Callback=mock_callback,
     )
 
-@patch('boto3.s3.transfer.TransferConfig')
+
+@patch("boto3.s3.transfer.TransferConfig")
 def test_upload_with_progress_error(mock_transfer_config):
     """Test error handling during upload"""
     mock_client = Mock()
     mock_callback = Mock()
-    
+
     # Configure mock to raise an error
-    error_response = {'Error': {'Message': 'Upload failed'}}
+    error_response = {"Error": {"Message": "Upload failed"}}
     mock_client.upload_fileobj.side_effect = ClientError(
-        error_response,
-        'upload_fileobj'
+        error_response, "upload_fileobj"
     )
-    
-    source_response = {'Body': BytesIO(b'test data')}
-    dest_bucket = 'test-bucket'
-    dest_key = 'test/key.txt'
+
+    source_response = {"Body": BytesIO(b"test data")}
+    dest_bucket = "test-bucket"
+    dest_key = "test/key.txt"
     size = 1024
-    
+
     # Verify the error is re-raised
     with pytest.raises(ClientError) as exc_info:
-        upload_with_progress(mock_client, source_response, dest_bucket, dest_key, size, mock_callback)
-    
+        upload_with_progress(
+            mock_client, source_response, dest_bucket, dest_key, size, mock_callback
+        )
+
     # Verify the original error is preserved
     assert exc_info.value.response == error_response
-    assert exc_info.value.operation_name == 'upload_fileobj'
+    assert exc_info.value.operation_name == "upload_fileobj"
 
-@patch('boto3.s3.transfer.TransferConfig')
+
+@patch("boto3.s3.transfer.TransferConfig")
 def test_upload_with_progress_callback(mock_transfer_config):
     """Test that progress callback is properly invoked"""
     mock_client = Mock()
     mock_callback = Mock()
-    
+
     def simulate_upload_with_callback(*args, **kwargs):
         # Simulate progress by calling the callback
-        callback = kwargs.get('Callback')
+        callback = kwargs.get("Callback")
         if callback:
             callback(512)  # Simulate 512 bytes transferred
             callback(512)  # Simulate another 512 bytes
-    
+
     mock_client.upload_fileobj.side_effect = simulate_upload_with_callback
-    
-    source_response = {'Body': BytesIO(b'test data')}
-    dest_bucket = 'test-bucket'
-    dest_key = 'test/key.txt'
+
+    source_response = {"Body": BytesIO(b"test data")}
+    dest_bucket = "test-bucket"
+    dest_key = "test/key.txt"
     size = 1024
-    
-    upload_with_progress(mock_client, source_response, dest_bucket, dest_key, size, mock_callback)
-    
+
+    upload_with_progress(
+        mock_client, source_response, dest_bucket, dest_key, size, mock_callback
+    )
+
     # Verify callback was called twice with correct values
     assert mock_callback.call_count == 2
     mock_callback.assert_any_call(512)

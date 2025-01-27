@@ -15,6 +15,7 @@ import humanize
 from botocore.exceptions import ClientError
 from tqdm import tqdm
 
+
 class TransferStatus:
     NEW = "new"
     EXISTING = "existing"
@@ -244,22 +245,24 @@ def print_summary(tracker):
         )
 
 
-def upload_with_progress(client, source_response, dest_bucket, dest_key, size, progress_callback):
+def upload_with_progress(
+    client, source_response, dest_bucket, dest_key, size, progress_callback
+):
     """Upload a file to S3 with progress tracking"""
     config = boto3.s3.transfer.TransferConfig(
         multipart_threshold=1024 * 1024 * 8,  # 8MB
         max_concurrency=10,
         multipart_chunksize=1024 * 1024 * 8,  # 8MB
-        use_threads=True
+        use_threads=True,
     )
 
-    try: 
+    try:
         client.upload_fileobj(
             source_response["Body"],
             dest_bucket,
             dest_key,
             Config=config,
-            Callback=progress_callback
+            Callback=progress_callback,
         )
     except ClientError as e:
         # Re-raise with context
@@ -378,7 +381,7 @@ def copy_bucket(source_profile, source_url, dest_profile, dest_url):
                     dest_bucket,
                     dest_key,
                     size,
-                    upload_progress_callback
+                    upload_progress_callback,
                 )
 
                 # Update progress
