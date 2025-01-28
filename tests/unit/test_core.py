@@ -320,7 +320,7 @@ def test_upload_with_progress_multipart_chunksize_larger_than_threshold(
 
     # Verify TransferConfig was called with correct parameters
     mock_transfer_config.assert_called_once_with(
-        multipart_threshold=1024 * 1024 * 1024,  # 1GB
+        multipart_threshold=1024 * 1024 * 10,  # 10MB
         max_concurrency=15,
         multipart_chunksize=expected_chunk_size,
         use_threads=True,
