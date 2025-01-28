@@ -250,10 +250,18 @@ def upload_with_progress(
     client, source_response, dest_bucket, dest_key, size, progress_callback
 ):
     """Upload a file to S3 with progress tracking"""
+    # AWS limits the number of parts per upload to 10,000
+    MAX_PARTS = 10000
+    # We need to calculate the part sizes based on the file size
+    # and the maximum number of parts allowed by S3.
+    # We can use the following formula to calculate the part size:
+    # part_size = file_size / MAX_PARTS
+    part_size = (size // MAX_PARTS) + 1
+
     config = boto3.s3.transfer.TransferConfig(
-        multipart_threshold=1024 * 1024 * 8,  # 8MB
-        max_concurrency=10,
-        multipart_chunksize=1024 * 1024 * 8,  # 8MB
+        multipart_threshold=1024 * 1024 * 1024,  # 1GB
+        max_concurrency=15,
+        multipart_chunksize=part_size,
         use_threads=True,
     )
 
