@@ -299,6 +299,44 @@ def test_upload_with_progress_success(mock_transfer_config):
 
 
 @patch("boto3.s3.transfer.TransferConfig")
+def test_upload_with_progress_multipart_chunksize_larger_than_threshold(
+    mock_transfer_config,
+):
+    """Test successful upload with progress callback and large file"""
+    mock_client = Mock()
+    mock_callback = Mock()
+
+    source_response = {"Body": BytesIO(b"test data")}
+    dest_bucket = "test-bucket"
+    dest_key = "test/key.txt"
+    size = 1024 * 1024 * 1024 * 100  # 100GB
+
+    expected_chunk_size = (size // 10000) + 1  # Based on MAX_PARTS = 10000
+
+    # Call the function
+    upload_with_progress(
+        mock_client, source_response, dest_bucket, dest_key, size, mock_callback
+    )
+
+    # Verify TransferConfig was called with correct parameters
+    mock_transfer_config.assert_called_once_with(
+        multipart_threshold=1024 * 1024 * 10,  # 10MB
+        max_concurrency=15,
+        multipart_chunksize=expected_chunk_size,
+        use_threads=True,
+    )
+
+    # Verify upload_fileobj was called correctly
+    mock_client.upload_fileobj.assert_called_once_with(
+        source_response["Body"],
+        dest_bucket,
+        dest_key,
+        Config=mock_transfer_config.return_value,
+        Callback=mock_callback,
+    )
+
+
+@patch("boto3.s3.transfer.TransferConfig")
 def test_upload_with_progress_error(mock_transfer_config):
     """Test error handling during upload"""
     mock_client = Mock()
