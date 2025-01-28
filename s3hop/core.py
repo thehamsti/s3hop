@@ -9,12 +9,16 @@ import time
 from collections import defaultdict
 from datetime import datetime
 
+# import logging
 import boto3
 import humanize
 from botocore.exceptions import ClientError
 from tqdm import tqdm
 
 from . import __version__
+
+# Used for debugging
+# boto3.set_stream_logger("", logging.DEBUG)
 
 
 class TransferStatus:
@@ -226,7 +230,7 @@ def print_summary(tracker):
     print(f"  Transferred: {humanize.naturalsize(tracker.processed_size)}")
     print(f"  Skipped: {humanize.naturalsize(tracker.skipped_size)}")
     print(
-        f"  Average speed: {humanize.naturalsize(tracker.processed_size/(time.time() - tracker.start_time))}/s"
+        f"  Average speed: {humanize.naturalsize(tracker.processed_size / (time.time() - tracker.start_time))}/s"
     )
 
     if tracker.failed_files:
@@ -255,11 +259,14 @@ def upload_with_progress(
     # We need to calculate the part sizes based on the file size
     # and the maximum number of parts allowed by S3.
     # We can use the following formula to calculate the part size:
-    # part_size = file_size / MAX_PARTS
-    part_size = (size // MAX_PARTS) + 1
+    # part_size = file_size / MAX_PARTS -- If size is not higher then 1GB then just use 10MB for the chunk size
+    part_size = 1024 * 1024 * 10
+
+    if size > 1024 * 1024 * 1000:
+        part_size = (size // MAX_PARTS) + 1
 
     config = boto3.s3.transfer.TransferConfig(
-        multipart_threshold=1024 * 1024 * 1024,  # 1GB
+        multipart_threshold=1024 * 1024 * 10,  # 10MB
         max_concurrency=15,
         multipart_chunksize=part_size,
         use_threads=True,
