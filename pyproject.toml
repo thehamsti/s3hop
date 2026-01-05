@@ -1,0 +1,191 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "s3hop"
+dynamic = ["version"]
+description = "A high-performance tool to copy files between S3 buckets across AWS accounts"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "John Cummings", email = "john@hamsti.co" },
+]
+keywords = [
+    "aws",
+    "s3",
+    "transfer",
+    "sync",
+    "bucket",
+    "cloud",
+    "storage",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Archiving",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+dependencies = [
+    "boto3>=1.26.0",
+    "botocore>=1.29.0",
+    "tqdm>=4.65.0",
+    "humanize>=4.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "moto[s3]>=4.0.0",
+    "boto3-stubs[s3]>=1.26.0",
+    "pre-commit>=3.0.0",
+    "ruff>=0.1.0",
+]
+crt = [
+    "awscrt>=0.16.0",
+]
+
+[project.scripts]
+s3hop = "s3hop.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/thehamsti/s3hop"
+Documentation = "https://github.com/thehamsti/s3hop#readme"
+Repository = "https://github.com/thehamsti/s3hop.git"
+Issues = "https://github.com/thehamsti/s3hop/issues"
+Changelog = "https://github.com/thehamsti/s3hop/blob/main/CHANGELOG.md"
+
+[tool.hatch.version]
+path = "s3hop/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["s3hop"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/s3hop",
+    "/tests",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311", "py312"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+    | \.hatch
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["s3hop"]
+skip = [".git", ".hatch", ".mypy_cache", ".tox", ".venv", "build", "dist"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by black)
+    "B008",   # do not perform function calls in argument defaults
+    "B905",   # zip without explicit strict parameter
+]
+
+[tool.ruff.per-file-ignores]
+"tests/*" = ["ARG001"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_error_codes = true
+namespace_packages = true
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = [
+    "boto3.*",
+    "botocore.*",
+    "tqdm.*",
+    "humanize.*",
+    "moto.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+addopts = [
+    "--verbose",
+    "--cov=s3hop",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-fail-under=50",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["s3hop"]
+branch = true
+omit = [
+    "tests/*",
+    "s3hop/__main__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+show_missing = true
