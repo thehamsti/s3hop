@@ -1,0 +1,310 @@
+name: Release Flow
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - custom
+      custom_version:
+        description: 'Custom version (only used if version_type is "custom", e.g., 1.2.3)'
+        required: false
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Dry run (no actual release, just show what would happen)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/s3hop
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(python -c "import re; content=open('s3hop/__init__.py').read(); print(re.search(r'__version__\s*=\s*[\"']([^\"']+)[\"']', content).group(1))")
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          CURRENT="${{ steps.current_version.outputs.version }}"
+          VERSION_TYPE="${{ inputs.version_type }}"
+          CUSTOM_VERSION="${{ inputs.custom_version }}"
+
+          if [ "$VERSION_TYPE" = "custom" ]; then
+            if [ -z "$CUSTOM_VERSION" ]; then
+              echo "Error: Custom version is required when version_type is 'custom'"
+              exit 1
+            fi
+            # Validate semver format
+            if ! echo "$CUSTOM_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+              echo "Error: Invalid version format. Expected semver (e.g., 1.2.3 or 1.2.3-beta.1)"
+              exit 1
+            fi
+            NEW_VERSION="$CUSTOM_VERSION"
+          else
+            # Parse current version
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+            # Remove any pre-release suffix from patch
+            PATCH=$(echo "$PATCH" | sed 's/-.*//')
+
+            case "$VERSION_TYPE" in
+              major)
+                NEW_VERSION="$((MAJOR + 1)).0.0"
+                ;;
+              minor)
+                NEW_VERSION="$MAJOR.$((MINOR + 1)).0"
+                ;;
+              patch)
+                NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+                ;;
+            esac
+          fi
+
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update version in __init__.py
+        if: inputs.dry_run == false
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          sed -i "s/__version__ = \".*\"/__version__ = \"$NEW_VERSION\"/" s3hop/__init__.py
+          echo "Updated s3hop/__init__.py to version $NEW_VERSION"
+          grep "__version__" s3hop/__init__.py
+
+      - name: Generate changelog entry
+        id: changelog
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          CURRENT_VERSION="${{ steps.current_version.outputs.version }}"
+          DATE=$(date +%Y-%m-%d)
+
+          # Get commits since last tag or use recent commits
+          if git describe --tags --abbrev=0 2>/dev/null; then
+            LAST_TAG=$(git describe --tags --abbrev=0)
+            echo "Generating changelog from $LAST_TAG to HEAD"
+            COMMITS=$(git log --pretty=format:"- %s" "$LAST_TAG"..HEAD --no-merges)
+          else
+            echo "No previous tags found, using recent commits"
+            COMMITS=$(git log --pretty=format:"- %s" -20 --no-merges)
+          fi
+
+          # Categorize commits
+          FEATURES=""
+          FIXES=""
+          DOCS=""
+          CHORE=""
+          OTHER=""
+
+          while IFS= read -r commit; do
+            if [ -z "$commit" ]; then continue; fi
+            lowercase_commit=$(echo "$commit" | tr '[:upper:]' '[:lower:]')
+            if echo "$lowercase_commit" | grep -qE "^- (feat|add|new|feature)"; then
+              FEATURES="${FEATURES}${commit}
+          "
+            elif echo "$lowercase_commit" | grep -qE "^- (fix|bug|patch|hotfix)"; then
+              FIXES="${FIXES}${commit}
+          "
+            elif echo "$lowercase_commit" | grep -qE "^- (doc|docs|readme)"; then
+              DOCS="${DOCS}${commit}
+          "
+            elif echo "$lowercase_commit" | grep -qE "^- (chore|refactor|style|test|ci|build)"; then
+              CHORE="${CHORE}${commit}
+          "
+            else
+              OTHER="${OTHER}${commit}
+          "
+            fi
+          done <<< "$COMMITS"
+
+          # Build release notes
+          {
+            echo "## What's Changed in v$NEW_VERSION"
+            echo ""
+
+            if [ -n "$FEATURES" ]; then
+              echo "### Features"
+              echo "$FEATURES"
+            fi
+
+            if [ -n "$FIXES" ]; then
+              echo "### Bug Fixes"
+              echo "$FIXES"
+            fi
+
+            if [ -n "$DOCS" ]; then
+              echo "### Documentation"
+              echo "$DOCS"
+            fi
+
+            if [ -n "$CHORE" ]; then
+              echo "### Maintenance"
+              echo "$CHORE"
+            fi
+
+            if [ -n "$OTHER" ]; then
+              echo "### Other Changes"
+              echo "$OTHER"
+            fi
+
+            echo ""
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/v${CURRENT_VERSION}...v${NEW_VERSION}"
+          } > release_notes.md
+
+          echo "Release notes generated:"
+          cat release_notes.md
+
+          # Also prepare changelog entry for CHANGELOG.md
+          {
+            echo "## [$NEW_VERSION] - $DATE"
+            echo ""
+
+            if [ -n "$FEATURES" ]; then
+              echo "### Added"
+              echo "$FEATURES"
+            fi
+
+            if [ -n "$FIXES" ]; then
+              echo "### Fixed"
+              echo "$FIXES"
+            fi
+
+            if [ -n "$DOCS" ] || [ -n "$CHORE" ] || [ -n "$OTHER" ]; then
+              echo "### Changed"
+              [ -n "$DOCS" ] && echo "$DOCS"
+              [ -n "$CHORE" ] && echo "$CHORE"
+              [ -n "$OTHER" ] && echo "$OTHER"
+            fi
+          } > changelog_entry.md
+
+      - name: Update CHANGELOG.md
+        if: inputs.dry_run == false
+        run: |
+          # Insert new changelog entry after the header (line 7, after the semver link)
+          head -n 7 CHANGELOG.md > CHANGELOG_new.md
+          echo "" >> CHANGELOG_new.md
+          cat changelog_entry.md >> CHANGELOG_new.md
+          tail -n +8 CHANGELOG.md >> CHANGELOG_new.md
+          mv CHANGELOG_new.md CHANGELOG.md
+
+          echo "Updated CHANGELOG.md:"
+          head -n 40 CHANGELOG.md
+
+      - name: Commit version bump
+        if: inputs.dry_run == false
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          git add s3hop/__init__.py CHANGELOG.md
+          git commit -m "chore: bump version to $NEW_VERSION"
+          git push origin ${{ github.ref_name }}
+
+      - name: Create and push tag
+        if: inputs.dry_run == false
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
+          git push origin "v$NEW_VERSION"
+
+      - name: Build package
+        run: |
+          python -m build
+          echo "Built packages:"
+          ls -la dist/
+
+      - name: Dry run summary
+        if: inputs.dry_run == true
+        run: |
+          echo "## Dry Run Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Current version:** ${{ steps.current_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**New version:** ${{ steps.new_version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version type:** ${{ inputs.version_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Pre-release:** ${{ inputs.prerelease }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Notes Preview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat release_notes.md >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Changelog Entry Preview" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat changelog_entry.md >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "*This was a dry run. No changes were made.*" >> $GITHUB_STEP_SUMMARY
+
+      - name: Create GitHub Release
+        if: inputs.dry_run == false
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.new_version.outputs.new_version }}
+          name: v${{ steps.new_version.outputs.new_version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ inputs.prerelease }}
+          files: |
+            dist/*
+
+      - name: Publish to PyPI
+        if: inputs.dry_run == false
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Release summary
+        if: inputs.dry_run == false
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          echo "## Release v$NEW_VERSION Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Actions Completed" >> $GITHUB_STEP_SUMMARY
+          echo "- Updated version in \`s3hop/__init__.py\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Updated \`CHANGELOG.md\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Created git tag \`v$NEW_VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Created GitHub Release" >> $GITHUB_STEP_SUMMARY
+          echo "- Published to PyPI" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/v$NEW_VERSION)" >> $GITHUB_STEP_SUMMARY
+          echo "- [PyPI Package](https://pypi.org/project/s3hop/$NEW_VERSION/)" >> $GITHUB_STEP_SUMMARY
