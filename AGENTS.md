@@ -12,6 +12,7 @@
 - `pytest -vv` runs the full test suite; add `--cov=s3hop --cov-report=term-missing` to inspect coverage gaps.
 - `black .` and `isort .` auto-format imports and code; run before committing.
 - `flake8 .` and `mypy s3hop` enforce linting and typing gates.
+- After every change, run the tests, linting, and formatting commands above to confirm everything works.
 
 ## Coding Style & Naming Conventions
 - Follow Black formatting with 100-character lines, 4-space indentation, and trailing commas where valid.
